@@ -1,8 +1,8 @@
 import asyncio
-import os
 from openai import AzureOpenAI
 from fastmcp import Client
 from mcp.types import Tool
+from common_utility import get_secret
 
 mcp_client = Client("http://localhost:8000/mcp")
 
@@ -10,7 +10,7 @@ endpoint = "https://eastus.api.cognitive.microsoft.com/"
 model_name = "gpt-4.1"
 deployment = "gpt-4.1"
 
-subscription_key = ""
+subscription_key = get_secret('AzureOpenAiApiKey')
 api_version = "2024-12-01-preview"
 
 client = AzureOpenAI(

@@ -1,0 +1,13 @@
+{
+    "SomeSetting": "SomeValue",
+    "AzureAiModel": {
+        "gpt-5-nano": {
+            "modelName": "gpt-5-nano",
+            "deployment": "gpt-5-nano"
+        },
+        "o4-mini": {
+            "modelName": "o4-mini",
+            "deployment": "o4-mini"
+        }
+    }
+}

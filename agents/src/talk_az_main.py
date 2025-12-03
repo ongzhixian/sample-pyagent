@@ -1,7 +1,6 @@
-import os
 from openai import AzureOpenAI
 from openai.types.chat import chat_completion_message
-
+from common_utility import get_secret
 
 endpoint = "https://eastus.api.cognitive.microsoft.com/"
 model_name = "gpt-5-nano"
@@ -9,7 +8,7 @@ deployment = "gpt-5-nano"
 # model_name = "o4-mini"
 # deployment = "o4-mini"
 
-subscription_key = ""
+subscription_key = get_secret('AzureOpenAiApiKey')
 api_version = "2024-12-01-preview"
 
 client = AzureOpenAI(
