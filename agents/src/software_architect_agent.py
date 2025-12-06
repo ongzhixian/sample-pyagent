@@ -1,5 +1,6 @@
 import asyncio
 from openai import AzureOpenAI
+from openai.types.chat import chat_completion_message
 from fastmcp import Client
 from mcp.types import Tool
 from common_utility import get_secret
@@ -22,11 +23,11 @@ client = AzureOpenAI(
 
 def convert_fastapi_to_openai_tools(tool_list: list) -> list:
     """
-    Converts a list of Tool objects/dicts (like those from FastAPI/FastMCP) 
+    Converts a list of Tool objects/dicts (like those from FastAPI/FastMCP)
     into the format required by the Azure/OpenAI Chat Completions API.
     """
     openai_tools = []
-    
+
     for mcp_tool in tool_list:
         if not isinstance(mcp_tool, Tool):
             print(f"Skipping invalid tool entry: {mcp_tool}")
@@ -39,12 +40,12 @@ def convert_fastapi_to_openai_tools(tool_list: list) -> list:
 
         # Extracting and mapping fields
         tool_name = mcp_tool.name
-        
+
         # Use the description if available, otherwise provide a fallback
         tool_description = "" if mcp_tool.description is None else mcp_tool.description
-        
+
         tool_parameters = mcp_tool.inputSchema
-        
+
         # Construct the Azure OpenAI tool schema entry
         openai_entry = {
             "type": "function",
@@ -55,7 +56,7 @@ def convert_fastapi_to_openai_tools(tool_list: list) -> list:
             }
         }
         openai_tools.append(openai_entry)
-        
+
     return openai_tools
 
 async def get_tools():
@@ -95,8 +96,9 @@ async def get_tools():
 async def run():
     message_history = [{
         "role": "system",
-        "content": "You are a helpful assistant.",
+        "content": """You are world-class software architect.""",
     }]
+
     message_history.append({
         "role": "user",
         "content": "What tools do you have?",
@@ -104,26 +106,6 @@ async def run():
 
     tool_specs = await get_tools()
 
-    # tools = [
-    #     {
-    #         "type": "function",
-    #         "function": {
-    #             "name": "get_current_weather",
-    #             "description": "Get the current weather in a given location",
-    #             "parameters": {
-    #                 "type": "object",
-    #                 "properties": {
-    #                     "location": {
-    #                         "type": "string",
-    #                         "description": "The city and state, e.g., San Francisco, CA",
-    #                     },
-    #                     "unit": {"type": "string", "enum": ["celsius", "fahrenheit"]},
-    #                 },
-    #                 "required": ["location"],
-    #             },
-    #         },
-    #     }
-    # ]
     response = client.chat.completions.create(
         messages=message_history,
         max_completion_tokens=13107,
@@ -136,6 +118,50 @@ async def run():
     )
 
     print(response.choices[0].message.content)
+
+async def chat_debug():
+    message_history = [{
+        "role": "system",
+        "content": "You are a helpful assistant.",
+    }]
+    tool_specs = await get_tools()
+
+    user_input = ""
+
+    while user_input.lower() != "/bye":
+
+        user_input = input("User> ")
+
+        message_history.append({
+            "role": "user",
+            "content": user_input,
+        })
+
+        response = client.chat.completions.create(
+            messages=message_history,
+            max_completion_tokens=13107,
+            temperature=1.0,
+            top_p=1.0,
+            frequency_penalty=0.0,
+            presence_penalty=0.0,
+            model=deployment,
+            tools=tool_specs,  # Pass the tool schema here
+        )
+
+        if len(response.choices) > 0:
+            if len(response.choices) > 1:
+                print("Warning: Multiple responses received, only the first will be processed.")
+            chosen_response = response.choices[0]
+            if isinstance(chosen_response.message, chat_completion_message.ChatCompletionMessage):
+                chosen_response_message = chosen_response.message
+                print(chosen_response_message.content)
+                message_history.append({
+                    "role": "assistant",
+                    "content": chosen_response_message.content,
+                })
+            else:
+                print("Error: Unexpected message format in response. {0}".format(chosen_response))
+
 
 async def main():
     async with mcp_client:
@@ -156,4 +182,5 @@ async def main():
 
 if __name__ == "__main__":
     # asyncio.run(main())
-    asyncio.run(run())
+    # asyncio.run(run())
+    asyncio.run(chat_debug())
